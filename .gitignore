@@ -1,0 +1,13 @@
+.vs
+.vscode
+
+__pycache__
+*.pyc
+
+venv
+env
+
+.env
+
+.allowed_shops
+.requested_shops
