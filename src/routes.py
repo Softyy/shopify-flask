@@ -6,6 +6,12 @@ from flask import render_template, request, redirect, abort
 
 from .server import app
 
+# setup a new shopify session since that's what their python tool wants....?
+shopify.Session.setup(
+    api_key=os.getenv('SHOPIFY_API_KEY'),
+    secret=os.getenv('SHOPIFY_API_SECRET')
+)
+
 
 @app.route("/")
 def template_test():
@@ -27,14 +33,9 @@ def request_access():
                                  info.split('=') for info in shop_info.split(',')]})
 
     if shop in [shop_info['shop'] for shop_info in allowed_shops]:
+        # session valid TODO
         return render_template('template.html', shop=shop, locale=locale, session=session, timestamp=timestamp, hmac=hmac)
     # shop isn't known, we need to ask them for permission...
-
-    # setup a new shopify session since that's what their python tool wants....?
-    shopify.Session.setup(
-        api_key=os.getenv('SHOPIFY_API_KEY'),
-        secret=os.getenv('SHOPIFY_API_SECRET')
-    )
 
     # here we specify the shop name, shopify API version, and the token that shopify sent us
     session = shopify.Session(shop, '2020-01', hmac)
