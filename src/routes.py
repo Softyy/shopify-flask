@@ -31,8 +31,10 @@ def request_access():
     # shop isn't known, we need to ask them for permission...
 
     # setup a new shopify session since that's what their python tool wants....?
-    shopify.Session.setup(api_key=os.getenv(
-        'SHOPIFY_API_KEY'), secret=os.getenv('SHOPIFY_API_SECRET'))
+    shopify.Session.setup(
+        api_key=os.getenv('SHOPIFY_API_KEY'),
+        secret=os.getenv('SHOPIFY_API_SECRET')
+    )
 
     # here we specify the shop name, shopify API version, and the token that shopify sent us
     session = shopify.Session(shop, '2020-01', hmac)
@@ -83,7 +85,8 @@ def template_test2():
     with open('.requested_shops', 'w') as f:
         for info in request_shops:
             f.write(
-                f'shop={info["shop"]},state={info["state"]},timestamp={info["timestamp"]}\n')
+                f'shop={info["shop"]},state={info["state"]},timestamp={info["timestamp"]}\n'
+            )
 
     with open('.allowed_shops', 'a+') as f:
         f.write(f'shop={shop},code={code},timestamp={timestamp}\n')
