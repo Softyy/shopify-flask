@@ -2,11 +2,13 @@ import os
 import uuid
 import shopify
 
-from flask import render_template, request, redirect, abort
+from flask import render_template, request, redirect, abort, jsonify
 
 from .server import app
 
-# setup a new shopify session since that's what their python tool wants....?
+SHOPIFY_API_VERSION = os.getenv('SHOPIFY_API_VERSION', '2020-01')
+
+# setup up the shopify python api, it'll keep our key and secret
 shopify.Session.setup(
     api_key=os.getenv('SHOPIFY_API_KEY'),
     secret=os.getenv('SHOPIFY_API_SECRET')
@@ -21,6 +23,10 @@ def template_test():
 @app.route("/shopify")
 def request_access():
     hmac = request.args.get('hmac')
+    validRequest = shopify.Session.validate_params(request.args)
+    if not validRequest:
+        return abort(401, "hmac isn't valid or this is a replay attack")
+
     shop = request.args.get('shop')
     locale = request.args.get('locale')
     session = request.args.get('session')
@@ -32,16 +38,23 @@ def request_access():
             allowed_shops.append({key: value for key, value in [
                                  info.split('=') for info in shop_info.split(',')]})
 
-    if shop in [shop_info['shop'] for shop_info in allowed_shops]:
-        # session valid TODO
-        return render_template('template.html', shop=shop, locale=locale, session=session, timestamp=timestamp, hmac=hmac)
+    for allowed_shop in allowed_shops:
+        if shop == allowed_shop['shop']:
+            with shopify.Session.temp(shop, SHOPIFY_API_VERSION, allowed_shop['token']):
+                # temporarily sets ShopifyResource
+                shop = shopify.Shop.current()
+                product = shopify.Product.find()
+                print(shop, product)
+            return render_template('template.html', shop=shop, locale=locale, session=session, timestamp=timestamp, hmac=hmac)
+
     # shop isn't known, we need to ask them for permission...
 
-    # here we specify the shop name, shopify API version, and the token that shopify sent us
-    session = shopify.Session(shop, '2020-01', hmac)
+    # here we specify the shop name, shopify API version, but no token since we don't have one
+    session = shopify.Session(shop, SHOPIFY_API_VERSION, None)
 
     # we define the scope of what our shopify app needs to use here
-    scope = ["write_products"]
+    # https://shopify.dev/docs/admin-api/access-scopes
+    scope = ["write_products", "read_products"]
 
     # create a UUID for safety, on shopify routing the customer back to us after the approval form
     state = uuid.uuid4()
@@ -63,6 +76,10 @@ def request_access():
 @app.route("/shopify/auth/callback")
 def template_test2():
     hmac = request.args.get('hmac')
+    validRequest = shopify.Session.validate_params(request.args)
+    if not validRequest:
+        return abort(401, "hmac isn't valid or this is a replay attack")
+
     code = request.args.get('code')
     shop = request.args.get('shop')
     state = request.args.get('state')
@@ -82,6 +99,11 @@ def template_test2():
     if not shop_auth_valid:
         return abort(401, "You don`t seem to be in our request records? Try installing the app again. Sorry for any inconvenience.")
 
+    session = shopify.Session(shop, SHOPIFY_API_VERSION, None)
+
+    # permanent access token, be sure to keep this safe
+    token = session.request_token(request.args)
+
     # remove requested shop from requests.
     with open('.requested_shops', 'w') as f:
         for info in request_shops:
@@ -90,6 +112,6 @@ def template_test2():
             )
 
     with open('.allowed_shops', 'a+') as f:
-        f.write(f'shop={shop},code={code},timestamp={timestamp}\n')
+        f.write(f'shop={shop},token={token},timestamp={timestamp}\n')
 
-    return "Thank you for installing, we can do whatever with the page"
+    return "Thank you for installing, we can do whatever with the page", 200
