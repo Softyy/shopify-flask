@@ -115,3 +115,45 @@ def template_test2():
         f.write(f'shop={shop},token={token},timestamp={timestamp}\n')
 
     return "Thank you for installing, we can do whatever with the page", 200
+
+
+@app.route('/shopify/customers/redact', methods=['POST'])
+def delete_customer_data():
+    # TODO
+    # payload = {
+    #     "shop_id": 954889,
+    #     "shop_domain": "snowdevil.myshopify.com",
+    #     "customer": {
+    #         "id": 191167,
+    #         "email": "john@email.com",
+    #         "phone": "555-625-1199"
+    #     },
+    #     "orders_to_redact": [299938, 280263, 220458]
+    # }
+    return 200
+
+
+@app.route('/shopify/shop/redact', methods=['POST'])
+def delete_shop_data():
+    # TODO
+    # payload = {
+    #     "shop_id": 954889,
+    #     "shop_domain": "snowdevil.myshopify.com"
+    # }
+    return 200
+
+
+@app.route('/shopify/customers/data_request', methods=['POST'])
+def get_customer_data():
+    # TODO
+    # {
+    #     "shop_id": 954889,
+    #     "shop_domain": "snowdevil.myshopify.com",
+    #     "customer": {
+    #         "id": 191167,
+    #         "email": "john@email.com",
+    #         "phone":  "555-625-1199"
+    #     },
+    #     "orders_requested": [299938, 280263, 220458]
+    # }
+    return 200
