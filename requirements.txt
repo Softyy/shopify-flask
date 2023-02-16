@@ -18,5 +18,5 @@ python-dotenv==0.13.0
 PyYAML==5.4
 ShopifyAPI==7.0.3
 six==1.14.0
-Werkzeug==1.0.1
+Werkzeug==2.2.3
 wrapt==1.11.2
